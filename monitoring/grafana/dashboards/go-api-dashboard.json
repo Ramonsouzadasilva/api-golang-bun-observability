@@ -1,0 +1,229 @@
+{
+  "title": "Go API Base - Observability",
+  "tags": [],
+  "timezone": "browser",
+  "panels": [
+    {
+      "title": "1. CPU (%)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 12, "x": 0, "y": 0},
+      "targets": [{"expr": "rate(process_cpu_seconds_total[1m]) * 100", "legendFormat": "CPU"}],
+      "fieldConfig": { "defaults": { "unit": "percent", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [ {"color": "green", "value": null}, {"color": "orange", "value": 70}, {"color": "red", "value": 90} ]} } }
+    },
+    {
+      "title": "2. Memória (RAM)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 12, "x": 12, "y": 0},
+      "targets": [{"expr": "process_resident_memory_bytes", "legendFormat": "Memória"}],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "title": "3. Tempo de Resposta HTTP (P95)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 12, "x": 0, "y": 4},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[1m])))", "legendFormat": "P95"}],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "4. Tempo de Resposta HTTP (P99)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 12, "x": 12, "y": 4},
+      "targets": [{"expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket[1m])))", "legendFormat": "P99"}],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "5. Bcrypt Hash Validation (P95)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 12, "x": 0, "y": 8},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(bcrypt_duration_seconds_bucket[1m])))", "legendFormat": "Bcrypt"}],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "6. DB Pool Wait Time (Tempo bloqueado)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 12, "x": 12, "y": 8},
+      "targets": [{"expr": "rate(db_pool_wait_duration_seconds_total[1m])", "legendFormat": "DB Wait"}],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "7. Endpoint: Register (P95)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 12, "x": 0, "y": 12},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{route=\"/api/v1/auth/register\"}[1m])))", "legendFormat": "Register P95"}],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "8. Endpoint: Login (P95)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 12, "x": 12, "y": 12},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{route=\"/api/v1/auth/login\"}[1m])))", "legendFormat": "Login P95"}],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "9. RPS (Requisições por Segundo)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 12, "x": 0, "y": 16},
+      "targets": [{"expr": "sum(rate(http_requests_total[1m]))", "legendFormat": "RPS"}],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "title": "10. Erros (Requisições 4xx ou 5xx/seg)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 12, "x": 12, "y": 16},
+      "targets": [{"expr": "sum(rate(http_requests_total{status=~\"[45].*\"}[1m]))", "legendFormat": "Erros/s"}],
+      "fieldConfig": { "defaults": { "unit": "reqps", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [ {"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 5} ]} } }
+    },
+    {
+      "title": "Request Rate (RPS)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "targets": [
+        {
+          "expr": "sum by (method, route) (rate(http_requests_total[1m]))",
+          "legendFormat": "{{method}} {{route}}"
+        }
+      ]
+    },
+    {
+      "title": "Error Rate (4xx/5xx)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(http_requests_total{status=~\"[45].*\"}[1m]))",
+          "legendFormat": "HTTP {{status}}"
+        }
+      ]
+    },
+    {
+      "title": "Request Duration (p95)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, method, route) (rate(http_request_duration_seconds_bucket[1m])))",
+          "legendFormat": "{{method}} {{route}}"
+        }
+      ]
+    },
+    {
+      "title": "Bcrypt Hash Duration (p95)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(bcrypt_duration_seconds_bucket[1m])))",
+          "legendFormat": "p95 Duration"
+        }
+      ]
+    },
+    {
+      "title": "DB Pool Connections",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 36},
+      "targets": [
+        {
+          "expr": "db_pool_open_connections",
+          "legendFormat": "Open"
+        },
+        {
+          "expr": "db_pool_idle_connections",
+          "legendFormat": "Idle"
+        }
+      ]
+    },
+    {
+      "title": "Go Goroutines",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 36},
+      "targets": [
+        {
+          "expr": "go_goroutines",
+          "legendFormat": "Goroutines"
+        }
+      ]
+    },
+    {
+      "title": "CPU Usage (Process)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 44},
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total[1m])",
+          "legendFormat": "CPU Cores Used"
+        }
+      ]
+    },
+    {
+      "title": "Memory Usage (RSS)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 44},
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes",
+          "legendFormat": "RSS"
+        }
+      ]
+    },
+    {
+      "title": "GARGALO: Endpoints Mais Lentos (P95)",
+      "type": "barchart",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 52},
+      "targets": [
+        {
+          "expr": "topk(5, histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket[1m]))))",
+          "legendFormat": "{{route}}"
+        }
+      ]
+    },
+    {
+      "title": "GARGALO: Endpoints com Mais Erros",
+      "type": "barchart",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 52},
+      "targets": [
+        {
+          "expr": "topk(5, sum by (route) (rate(http_requests_total{status=~\"[45].*\"}[1m])))",
+          "legendFormat": "{{route}}"
+        }
+      ]
+    },
+    {
+      "title": "CORRELAÇÃO: CPU x Volume de Requisições",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 52},
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total[1m])",
+          "legendFormat": "Uso de CPU (Cores)"
+        },
+        {
+          "expr": "sum(rate(http_requests_total[1m])) / 100",
+          "legendFormat": "Requisições/s (Dividido por 100)"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "refresh": "5s"
+}
